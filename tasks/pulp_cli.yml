@@ -1,0 +1,31 @@
+---
+
+- name: Install pulp.squeezer dependencies into venv
+  become: true
+  ansible.builtin.pip:
+    name: "pulp-cli[pygments]"
+    virtualenv: "{{ pulp_ansible_venv }}"
+    virtualenv_command: "python3 -m venv"
+
+- name: Ensure pulp-cli config directory exists
+  become: true
+  become_user: "{{ pulp_user }}"
+  ansible.builtin.file:
+    path: "{{ pulp_cli_config_path | dirname }}"
+    state: directory
+    mode: '0700'
+
+- name: Configure pulp-cli authentication
+  become: true
+  become_user: "{{ pulp_user }}"
+  ansible.builtin.blockinfile:
+    path: "{{ pulp_user_home }}/.config/pulp/cli.toml"
+    create: true
+    mode: '0600'
+    block: |
+      [cli]
+      base_url = "{{ pulp_url }}"
+      username = "{{ pulp_admin_username }}"
+      password = "{{ pulp_admin_password }}"
+
+...

@@ -1,3 +1,16 @@
 ---
 
+- name: Get pulp status
+  ansible.builtin.uri:
+    url: "{{ pulp_url }}/pulp/api/v3/status/"
+  failed_when: false
+  register: pulp_status_endpoint
+
+- name: Test pulp api status
+  ansible.builtin.assert:
+    that:
+      - pulp_status_endpoint.status == 200
+    fail_msg: "No response from pulp api, recieved code {{ pulp_status_endpoint.status }}"
+    quiet: true
+
 ...

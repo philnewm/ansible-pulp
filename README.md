@@ -10,30 +10,36 @@ This role includes a vagrant based molecule testing setup as a submodule at `mol
 
 ```code
 📦 ansible-pulp
- ┣ 📂 defaults
- ┃ ┗ 📜 main.yml
- ┣ 📂 files
- ┃ ┗ 📜 file_placeholder.yml
- ┣ 📂 handlers
- ┃ ┗ 📜 main.yml
- ┣ 📂 meta
- ┃ ┗ 📜 main.yml
+ ┣ 📂defaults
+ ┃ ┗ 📂main
+ ┃ ┃ ┣ 📜common.yml
+ ┃ ┃ ┣ 📜python_repos.yml
+ ┃ ┃ ┗ 📜rpm_repos.yml
+ ┣ 📂meta
+ ┃ ┗ 📜main.yml
  ┣ 📂 molecule
  ┃ ┗ 📂 default
  ┃   ┗ 📜, 📜, 📜, scenario_files
- ┣ 📂 tasks
- ┃ ┣ 📜 main.yml
- ┃ ┣ 📜 present.yml
- ┃ ┣ 📜 dependencies.yml
- ┃ ┣ 📜 absent.yml
- ┃ ┗ 📜 init.yml
- ┣ 📂 templates
- ┃ ┗ ⛩️ template.j2
- ┣ 📂 vars
- ┃ ┗ 📜 main.yml
- ┗ 🗒️ README.md
- ┗ 📓 requirements.txt
- ┗ 📓 requirements.yml
+ ┣ 📂tasks
+ ┃ ┣ 📜absent.yml
+ ┃ ┣ 📜ansible_config.yml
+ ┃ ┣ 📜container_config.yml
+ ┃ ┣ 📜dependencies.yml
+ ┃ ┣ 📜file_config.yml
+ ┃ ┣ 📜main.yml
+ ┃ ┣ 📜present.yml
+ ┃ ┣ 📜pulp_cli.yml
+ ┃ ┣ 📜python_config.yml
+ ┃ ┣ 📜rpm_config.yml
+ ┃ ┣ 📜service_setup.yml
+ ┃ ┣ 📜tests.yml
+ ┃ ┗ 📜verify_service.yml
+ ┣ 📂vars
+ ┃ ┗ 📜main.yml
+ ┣ 📜.gitignore
+ ┣ 📜.gitmodules
+ ┣ 📜README.md
+ ┗ 📜requirements.yml
 
 ```
 

@@ -1,0 +1,79 @@
+---
+
+- name: Create container remotes
+  vars:
+    ansible_python_interpreter: "{{ pulp_ansible_venv }}/bin/python"
+  become: true
+  become_user: "{{ pulp_user }}"
+  loop: "{{ pulp_container_remotes }}"
+  loop_control:
+    loop_var: container_remote
+    label: "{{ container_remote.name }}"
+  pulp.squeezer.container_remote:
+    pulp_url: "{{ pulp_url }}"
+    username: "{{ pulp_admin_username }}"
+    password: "{{ pulp_admin_password }}"
+    name: "{{ container_remote.name }}"
+    upstream_name: "{{ container_remote.upstream_name }}"
+    url: "{{ container_remote.url }}"
+    policy: "{{ container_remote.policy }}"
+    download_concurrency: "{{ container_remote.download_concurrency }}"
+    state: present
+
+- name: Create container repositories
+  vars:
+    ansible_python_interpreter: "{{ pulp_ansible_venv }}/bin/python"
+  become: true
+  become_user: "{{ pulp_user }}"
+  loop: "{{ pulp_container_repositories }}"
+  loop_control:
+    loop_var: container_repository
+    label: "{{ container_repository.name }}"
+  pulp.squeezer.container_repository:
+    pulp_url: "{{ pulp_url }}"
+    username: "{{ pulp_admin_username }}"
+    password: "{{ pulp_admin_password }}"
+    name: "{{ container_repository.name }}"
+    description: "{{ container_repository.description }}"
+    state: present
+
+- name: Run container syncs
+  vars:
+    ansible_python_interpreter: "{{ pulp_ansible_venv }}/bin/python"
+  become: true
+  become_user: "{{ pulp_user }}"
+  loop: "{{ pulp_container_syncs }}"
+  loop_control:
+    loop_var: container_sync
+    label: "{{ container_sync.repository }}"
+  pulp.squeezer.container_sync:
+    pulp_url: "{{ pulp_url }}"
+    username: "{{ pulp_admin_username }}"
+    password: "{{ pulp_admin_password }}"
+    repository: "{{ container_sync.repository }}"
+    remote: "{{ container_sync.remote }}"
+  register: container_sync_result
+
+- name: Display sync results
+  ansible.builtin.debug:
+    var: container_sync_result.results
+
+- name: Distribute container repositories
+  vars:
+    ansible_python_interpreter: "{{ pulp_ansible_venv }}/bin/python"
+  become: true
+  become_user: "{{ pulp_user }}"
+  loop: "{{ pulp_container_repositories }}"
+  loop_control:
+    loop_var: container_repository
+    label: "{{ container_repository.name }}"
+  pulp.squeezer.container_distribution:
+    pulp_url: "{{ pulp_url }}"
+    username: "{{ pulp_admin_username }}"
+    password: "{{ pulp_admin_password }}"
+    name: "{{ container_repository.name }}-pub"
+    base_path: "{{ container_repository.name }}"
+    repository: "{{ container_repository.name }}"
+    state: present
+
+...

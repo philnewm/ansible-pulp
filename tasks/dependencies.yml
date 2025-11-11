@@ -1,7 +1,22 @@
 ---
 
-# INFO This task may be osbolete for your use-case
 - name: Gather package facts
   ansible.builtin.package_facts:
+
+- name: Ensure required packages are installed
+  become: true
+  when: item not in ansible_facts.packages
+  loop: "{{ podman_packages }}"
+  ansible.builtin.package:
+    name: "{{ item }}"
+    state: present
+    update_cache: true
+
+- name: Ensure python3.10-venv exists
+  become: true
+  when: ansible_os_family == "Debian"
+  ansible.builtin.apt:
+    name: python3.10-venv
+    state: present
 
 ...

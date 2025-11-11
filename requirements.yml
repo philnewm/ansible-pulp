@@ -1,6 +1,4 @@
-# Add ansible role requirements
 collections:
   - community.general
-
-# roles:
-#   - name: <role.name>
+  - containers.podman
+  - pulp.squeezer

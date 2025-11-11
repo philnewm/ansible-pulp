@@ -1,0 +1,26 @@
+---
+
+pulp_python_remotes:
+  - name: "pypi"
+    url: "https://pypi.org/"
+    policy: "on_demand"
+    prereleases: false
+    download_concurrency: 10
+    includes:
+      - pip
+      - venv
+      - PyYAML
+      - ansible
+      - requests
+
+pulp_python_repositories:
+  - name: "pypi-mirror"
+    description: Local PyPI mirror
+    remote: "pypi"
+
+pulp_python_syncs:
+  - repository: "pypi-mirror"
+    remote: "pypi"
+    sync_policy: "additive"
+
+...

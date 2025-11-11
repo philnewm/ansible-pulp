@@ -1,0 +1,101 @@
+---
+
+- name: Create ansible repositories
+  vars:
+    ansible_python_interpreter: "{{ pulp_ansible_venv }}/bin/python"
+  become: true
+  become_user: "{{ pulp_user }}"
+  loop: "{{ pulp_ansible_repositories }}"
+  loop_control:
+    loop_var: ansible_repository
+    label: "{{ ansible_repository.name }}"
+  pulp.squeezer.ansible_repository:
+    pulp_url: "{{ pulp_url }}"
+    username: "{{ pulp_admin_username }}"
+    password: "{{ pulp_admin_password }}"
+    name: "{{ ansible_repository.name }}"
+    description: "{{ ansible_repository.description }}"
+    state: present
+
+- name: Distribute ansible repo
+  vars:
+    ansible_python_interpreter: "{{ pulp_ansible_venv }}/bin/python"
+  become: true
+  become_user: "{{ pulp_user }}"
+  loop: "{{ pulp_ansible_repositories }}"
+  loop_control:
+    loop_var: ansible_distribution
+    label: "{{ ansible_distribution.name }}"
+  pulp.squeezer.ansible_distribution:
+    pulp_url: "{{ pulp_url }}"
+    username: "{{ pulp_admin_username }}"
+    password: "{{ pulp_admin_password }}"
+    name: "{{ ansible_distribution.name }}-pub"
+    base_path: "{{ ansible_distribution.name }}"
+    repository: "{{ ansible_distribution.name }}"
+    state: present
+
+- name: Create ansible collections remotes
+  vars:
+    ansible_python_interpreter: "{{ pulp_ansible_venv }}/bin/python"
+  become: true
+  become_user: "{{ pulp_user }}"
+  loop: "{{ pulp_ansible_collections_remotes }}"
+  loop_control:
+    loop_var: ansible_remote
+    label: "{{ ansible_remote.name }}"
+  pulp.squeezer.ansible_remote:
+    pulp_url: "{{ pulp_url }}"
+    username: "{{ pulp_admin_username }}"
+    password: "{{ pulp_admin_password }}"
+    name: "{{ ansible_remote.name }}"
+    url: "{{ ansible_remote.url }}"
+    content_type: "{{ ansible_remote.content_type }}"
+    download_concurrency: "{{ ansible_remote.download_concurrency }}"
+    policy: "{{ ansible_remote.policy }}"
+    collections: "{{ ansible_remote.collections }}"
+    state: present
+
+- name: Create ansible roles remotes
+  vars:
+    ansible_python_interpreter: "{{ pulp_ansible_venv }}/bin/python"
+  become: true
+  become_user: "{{ pulp_user }}"
+  loop: "{{ pulp_ansible_roles_remotes }}"
+  loop_control:
+    loop_var: ansible_remote
+    label: "{{ ansible_remote.name }}"
+  pulp.squeezer.ansible_remote:
+    pulp_url: "{{ pulp_url }}"
+    username: "{{ pulp_admin_username }}"
+    password: "{{ pulp_admin_password }}"
+    name: "{{ ansible_remote.name }}"
+    url: "{{ ansible_remote.url }}"
+    content_type: "{{ ansible_remote.content_type }}"
+    download_concurrency: "{{ ansible_remote.download_concurrency }}"
+    policy: "{{ ansible_remote.policy }}"
+    state: present
+
+- name: Run ansible syncs
+  vars:
+    ansible_python_interpreter: "{{ pulp_ansible_venv }}/bin/python"
+  become: true
+  become_user: "{{ pulp_user }}"
+  loop: "{{ pulp_ansible_syncs }}"
+  loop_control:
+    loop_var: ansible_sync
+    label: "{{ ansible_sync.repository }}"
+  pulp.squeezer.ansible_sync:
+    pulp_url: "{{ pulp_url }}"
+    username: "{{ pulp_admin_username }}"
+    password: "{{ pulp_admin_password }}"
+    repository: "{{ ansible_sync.repository }}"
+    remote: "{{ ansible_sync.remote }}"
+    content_type: "{{ ansible_sync.content_type }}"
+  register: ansible_sync_result
+
+- name: Display sync results
+  ansible.builtin.debug:
+    var: ansible_sync_result.results
+
+...

@@ -1,0 +1,46 @@
+---
+
+state: present
+pulp_user: "pulp"
+pulp_user_home: "/var/lib/{{ pulp_user }}"
+pulp_image: "docker.io/pulp/pulp:latest"
+pulp_container_name: "pulp"
+pulp_system_user: true
+pulp_subid_steps: 65536
+pulp_systemd_container_prefix: "container"
+pulp_ports:
+  - "8080:80"
+pulp_volumes:
+  - name: "settings"
+    host_path: "{{ pulp_user_home }}/pulp/settings"
+    container_path: "/etc/pulp"
+    permissions: "0755"
+  - name: "storage"
+    host_path: "{{ pulp_user_home }}/pulp/storage"
+    container_path: "/var/lib/pulp"
+    permissions: "0755"
+  - name: "pqsql"
+    host_path: "{{ pulp_user_home }}/pulp/pgsql"
+    container_path: "/var/lib/pgsql"
+    permissions: "0750"
+  - name: "containers"
+    host_path: "{{ pulp_user_home }}/pulp/containers"
+    container_path: "/var/lib/containers"
+    permissions: "0755"
+  - name: "container_build"
+    host_path: "{{ pulp_user_home }}/pulp/container_build"
+    container_path: "/var/lib/pulp/.local/share/containers"
+    permissions: "0755"
+pulp_admin_username: "admin"
+pulp_admin_password: "admin_!"
+pulp_url: "http://localhost:8080"
+pulp_content_path_prefix: "/registry/"
+pulp_ansible_venv: "{{ pulp_user_home }}/python_venv/pulp"
+pulp_venv_python_packages:
+  - pulp-glue
+  - packaging
+pulp_cli: true
+pulp_cli_config_path: "{{ pulp_user_home }}/.config/pulp/cli.toml"
+pulp_validate_certs: false
+
+...

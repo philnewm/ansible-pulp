@@ -1,0 +1,73 @@
+---
+
+- name: Create file repositories
+  vars:
+    ansible_python_interpreter: "{{ pulp_ansible_venv }}/bin/python"
+  become: true
+  become_user: "{{ pulp_user }}"
+  loop: "{{ pulp_file_repositories }}"
+  loop_control:
+    loop_var: file_repository
+    label: "{{ file_repository.name }}"
+  pulp.squeezer.file_repository:
+    pulp_url: "{{ pulp_url }}"
+    username: "{{ pulp_admin_username }}"
+    password: "{{ pulp_admin_password }}"
+    name: "{{ file_repository.name }}"
+    description: "{{ file_repository.description }}"
+    state: present
+
+- name: Upload content units
+  vars:
+    ansible_python_interpreter: "{{ pulp_ansible_venv }}/bin/python"
+  become: true
+  become_user: "{{ pulp_user }}"
+  loop: "{{ pulp_file_content }}"
+  loop_control:
+    loop_var: file_content
+    label: "{{ file_content.name }}"
+  pulp.squeezer.file_content:
+    pulp_url: "{{ pulp_url }}"
+    username: "{{ pulp_admin_username }}"
+    password: "{{ pulp_admin_password }}"
+    file: "{{ file_content.file_path }}"
+    relative_path: "{{ file_content.relative_path }}"
+    repository: "{{ file_content.repository }}"
+    state: present
+
+- name: Create file publications
+  vars:
+    ansible_python_interpreter: "{{ pulp_ansible_venv }}/bin/python"
+  become: true
+  become_user: "{{ pulp_user }}"
+  loop: "{{ pulp_file_repositories }}"
+  loop_control:
+    loop_var: file_repository
+    label: "{{ file_repository.name }}"
+  pulp.squeezer.file_publication:
+    pulp_url: "{{ pulp_url }}"
+    username: "{{ pulp_admin_username }}"
+    password: "{{ pulp_admin_password }}"
+    repository: "{{ file_repository.name }}"
+    state: present
+  register: file_publication
+
+- name: Distribute file publications
+  vars:
+    ansible_python_interpreter: "{{ pulp_ansible_venv }}/bin/python"
+  become: true
+  become_user: "{{ pulp_user }}"
+  loop: "{{ file_publication.results }}"
+  loop_control:
+    loop_var: publication
+    label: "{{ publication.file_repository.name }}"
+  pulp.squeezer.python_distribution:
+    pulp_url: "{{ pulp_url }}"
+    username: "{{ pulp_admin_username }}"
+    password: "{{ pulp_admin_password }}"
+    name: "{{ publication.file_repository.name }}-pub"
+    base_path: "{{ publication.file_repository.name }}"
+    publication: "{{ publication.publication.pulp_href }}"
+    state: present
+
+...

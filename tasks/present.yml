@@ -7,8 +7,78 @@
     name: python-apt-common
     state: present
 
-# INFO This task may be obsolete for your use-case
 - name: Gather package facts
   ansible.builtin.package_facts:
+
+- name: "Look up entry in passwd for user {{ pulp_user }}"
+  become: true
+  ansible.builtin.getent:
+    database: passwd
+    key: "{{ pulp_user }}"
+
+- name: Set pulp user uid
+  ansible.builtin.set_fact:
+    pulp_uid: "{{ getent_passwd[pulp_user][1] }}"
+
+- name: Include pulp setup
+  ansible.builtin.include_tasks:
+    file: dependencies.yml
+
+- name: Check pulp status
+  ansible.builtin.uri:
+    url: "{{ pulp_url }}/pulp/api/v3/status/"
+  failed_when: false
+  register: pulp_status_endpoint
+  retries: 3
+  delay: 1
+  until: pulp_status_endpoint.status == 200
+
+- name: Include pulp setup
+  ansible.builtin.include_tasks:
+    file: service_setup.yml
+
+- name: Include service verification
+  ansible.builtin.include_tasks:
+    file: verify_service.yml
+
+# TODO set up more sofisticated condition
+- name: Set admin password inside pulp container
+  become: true
+  become_user: "{{ pulp_user }}"
+  when: pulp_status_endpoint.status != 200
+  containers.podman.podman_container_exec:
+    name: pulp
+    command: >
+      pulpcore-manager reset-admin-password --password '{{ pulp_admin_password }}'
+
+- name: Set up pulp-cli for manual usage
+  when: pulp_cli
+  ansible.builtin.include_tasks:
+    file: "pulp_cli.yml"
+
+- name: Include pulp rpm config
+  when: pulp_rpm_remotes is defined or pulp_rpm_repositories is defined
+  ansible.builtin.include_tasks:
+    file: rpm_config.yml
+
+- name: Include pulp python config
+  when: pulp_python_remotes is defined or pulp_python_repositories is defined
+  ansible.builtin.include_tasks:
+    file: python_config.yml
+
+- name: Include pulp python config
+  when: pulp_file_repositories is defined or pulp_file_content is defined
+  ansible.builtin.include_tasks:
+    file: file_config.yml
+
+- name: Include pulp ansible config
+  when: pulp_ansible_repositories is defined or pulp_ansible_collections_remotes is defined or pulp_ansible_roles_remotes is defined
+  ansible.builtin.include_tasks:
+    file: ansible_config.yml
+
+- name: Include pulp ansible config
+  when: pulp_container_remotes is defined or pulp_container_repositories is defined
+  ansible.builtin.include_tasks:
+    file: container_config.yml
 
 ...

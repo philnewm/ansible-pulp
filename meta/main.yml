@@ -2,20 +2,18 @@
 
 galaxy_info:
   role_name: pulp
-  namespace: philnewm
-  author: author_name
-  description: ansible-role-template description
+  author: philnewm
+  description: Install and configure pulp as rootless podman container
   license: some_license
   min_ansible_version: "2.1"
   platforms:
     - name: EL
       versions:
         - "9"
-    - name: Debian
-      versions:
-        - "bookworm"
-    - name: "Ubuntu"
-      versions:
-        - "jammy"
   galaxy_tags: []
-dependencies: []
+dependencies:
+  - role: philnewm.podman_rootless_user
+    vars:
+      rootless_user: "{{ pulp_user }}"
+      rootless_user_home: "/var/lib/{{ pulp_user }}"
+      system_user: true

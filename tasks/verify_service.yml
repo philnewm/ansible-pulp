@@ -1,0 +1,31 @@
+---
+
+- name: Wait for Pulp API to be ready
+  ansible.builtin.uri:
+    url: "{{ pulp_url }}/pulp/api/v3/status/"
+  register: pulp_status_endpoint_post_install
+  retries: 15
+  delay: 5
+  until: pulp_status_endpoint_post_install.status == 200
+
+- name: Query pulp api
+  vars:
+    ansible_python_interpreter: "{{ pulp_ansible_venv }}/bin/python"
+  become: true
+  become_user: "{{ pulp_user }}"
+  pulp.squeezer.status:
+    pulp_url: "{{ pulp_url }}"
+    username: "{{ pulp_admin_username }}"
+    password: "{{ pulp_admin_password }}"
+    validate_certs: "{{ pulp_validate_certs }}"
+  register: pulp_api_status
+  failed_when: false
+
+- name: Verify pulp api access
+  ansible.builtin.assert:
+    that:
+      - pulp_api_status.status.content_settings.content_path_prefix == pulp_content_path_prefix
+    fail_msg: "Failed accessing pulp's api at '{{ pulp_url }}'"
+    quiet: true
+
+...

@@ -1,0 +1,93 @@
+---
+
+- name: Create rpm remotes
+  vars:
+    ansible_python_interpreter: "{{ pulp_ansible_venv }}/bin/python"
+  become: true
+  become_user: "{{ pulp_user }}"
+  loop: "{{ pulp_rpm_remotes }}"
+  loop_control:
+    loop_var: rpm_remote
+    label: "{{ rpm_remote.name }}"
+  pulp.squeezer.rpm_remote:
+    pulp_url: "{{ pulp_url }}"
+    username: "{{ pulp_admin_username }}"
+    password: "{{ pulp_admin_password }}"
+    name: "{{ rpm_remote.name }}"
+    url: "{{ rpm_remote.url }}"
+    policy: "{{ rpm_remote.policy }}"
+    state: present
+
+- name: Create rpm repositories
+  vars:
+    ansible_python_interpreter: "{{ pulp_ansible_venv }}/bin/python"
+  become: true
+  become_user: "{{ pulp_user }}"
+  loop: "{{ pulp_rpm_repositories }}"
+  loop_control:
+    loop_var: rpm_repository
+    label: "{{ rpm_repository.name }}"
+  pulp.squeezer.rpm_repository:
+    pulp_url: "{{ pulp_url }}"
+    username: "{{ pulp_admin_username }}"
+    password: "{{ pulp_admin_password }}"
+    name: "{{ rpm_repository.name }}"
+    description: "{{ rpm_repository.description }}"
+    autopublish: "{{ rpm_repository.autopublish }}"
+    remote: "{{ rpm_repository.remote }}"
+    retain_package_versions: "{{ rpm_repository.retain_package_versions }}"
+    state: present
+
+- name: Run rpm syncs
+  vars:
+    ansible_python_interpreter: "{{ pulp_ansible_venv }}/bin/python"
+  become: true
+  become_user: "{{ pulp_user }}"
+  loop: "{{ pulp_rpm_syncs }}"
+  loop_control:
+    loop_var: rpm_sync
+    label: "{{ rpm_sync.repository }}"
+  pulp.squeezer.rpm_sync:
+    pulp_url: "{{ pulp_url }}"
+    username: "{{ pulp_admin_username }}"
+    password: "{{ pulp_admin_password }}"
+    repository: "{{ rpm_sync.repository }}"
+    sync_policy: "{{ rpm_sync.sync_policy }}"
+  register: rpm_sync_result
+
+- name: Get the latest publication for repo
+  vars:
+    ansible_python_interpreter: "{{ pulp_ansible_venv }}/bin/python"
+  become: true
+  become_user: "{{ pulp_user }}"
+  loop: "{{ pulp_rpm_repositories }}"
+  loop_control:
+    loop_var: rpm_repository
+    label: "{{ rpm_repository.name }}"
+  pulp.squeezer.rpm_publication:
+    pulp_url: "{{ pulp_url }}"
+    username: "{{ pulp_admin_username }}"
+    password: "{{ pulp_admin_password }}"
+    repository: "{{ rpm_repository.name }}"
+  register: publication_info
+
+- name: Distribute rpm publications
+  vars:
+    ansible_python_interpreter: "{{ pulp_ansible_venv }}/bin/python"
+  become: true
+  become_user: "{{ pulp_user }}"
+  loop: "{{ publication_info.results }}"
+  loop_control:
+    loop_var: publication
+    label: "{{ publication.rpm_repository.name }}"
+  pulp.squeezer.rpm_distribution:
+    pulp_url: "{{ pulp_url }}"
+    username: "{{ pulp_admin_username }}"
+    password: "{{ pulp_admin_password }}"
+    name: "{{ publication.rpm_repository.name }}-pub"
+    base_path: "{{ publication.rpm_repository.name }}"
+    publication: "{{ publication.publication.pulp_href }}"
+    generate_repo_config: true
+    state: present
+
+...

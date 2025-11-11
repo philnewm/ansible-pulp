@@ -1,0 +1,93 @@
+---
+
+- name: Create python remotes
+  vars:
+    ansible_python_interpreter: "{{ pulp_ansible_venv }}/bin/python"
+  become: true
+  become_user: "{{ pulp_user }}"
+  loop: "{{ pulp_python_remotes }}"
+  loop_control:
+    loop_var: python_remote
+    label: "{{ python_remote.name }}"
+  pulp.squeezer.python_remote:
+    pulp_url: "{{ pulp_url }}"
+    username: "{{ pulp_admin_username }}"
+    password: "{{ pulp_admin_password }}"
+    name: "{{ python_remote.name }}"
+    url: "{{ python_remote.url }}"
+    policy: "{{ python_remote.policy }}"
+    prereleases: "{{ python_remote.prereleases }}"
+    download_concurrency: "{{ python_remote.download_concurrency }}"
+    includes: "{{ python_remote.includes }}"
+    state: present
+
+- name: Create python repositories
+  vars:
+    ansible_python_interpreter: "{{ pulp_ansible_venv }}/bin/python"
+  become: true
+  become_user: "{{ pulp_user }}"
+  loop: "{{ pulp_python_repositories }}"
+  loop_control:
+    loop_var: python_repository
+    label: "{{ python_repository.name }}"
+  pulp.squeezer.python_repository:
+    pulp_url: "{{ pulp_url }}"
+    username: "{{ pulp_admin_username }}"
+    password: "{{ pulp_admin_password }}"
+    name: "{{ python_repository.name }}"
+    description: "{{ python_repository.description }}"
+    state: present
+
+- name: Run python syncs
+  vars:
+    ansible_python_interpreter: "{{ pulp_ansible_venv }}/bin/python"
+  become: true
+  become_user: "{{ pulp_user }}"
+  loop: "{{ pulp_python_syncs }}"
+  loop_control:
+    loop_var: python_sync
+    label: "{{ python_sync.repository }}"
+  pulp.squeezer.python_sync:
+    pulp_url: "{{ pulp_url }}"
+    username: "{{ pulp_admin_username }}"
+    password: "{{ pulp_admin_password }}"
+    repository: "{{ python_sync.repository }}"
+    remote: "{{ python_sync.remote }}"
+  register: python_sync_result
+
+- name: Create python publications
+  vars:
+    ansible_python_interpreter: "{{ pulp_ansible_venv }}/bin/python"
+  become: true
+  become_user: "{{ pulp_user }}"
+  loop: "{{ pulp_python_repositories }}"
+  loop_control:
+    loop_var: python_repository
+    label: "{{ python_repository.name }}"
+  pulp.squeezer.python_publication:
+    pulp_url: "{{ pulp_url }}"
+    username: "{{ pulp_admin_username }}"
+    password: "{{ pulp_admin_password }}"
+    repository: "{{ python_repository.name }}"
+    state: present
+  register: python_publication
+
+- name: Distribute python publications
+  vars:
+    ansible_python_interpreter: "{{ pulp_ansible_venv }}/bin/python"
+  become: true
+  become_user: "{{ pulp_user }}"
+  loop: "{{ python_publication.results }}"
+  loop_control:
+    loop_var: publication
+    label: "{{ publication.python_repository.name }}"
+  pulp.squeezer.python_distribution:
+    pulp_url: "{{ pulp_url }}"
+    username: "{{ pulp_admin_username }}"
+    password: "{{ pulp_admin_password }}"
+    name: "{{ publication.python_repository.name }}-pub"
+    base_path: "{{ publication.python_repository.name }}"
+    publication: "{{ publication.publication.pulp_href }}"
+    state: present
+
+...
