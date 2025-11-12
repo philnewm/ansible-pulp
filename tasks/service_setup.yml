@@ -29,7 +29,7 @@
   become: true
   become_user: "{{ pulp_user }}"
   ansible.builtin.file:
-    path: "{{ pulp_user_home }}/pulp/settings/certs"
+    path: "{{ pulp_service_dir }}/settings/certs"
     state: directory
     mode: '0755'
 
@@ -40,7 +40,7 @@
     - "CONTENT_ORIGIN='http://{{ ansible_hostname }}:8080'"
     - "CONTENT_PATH_PREFIX='{{ pulp_content_path_prefix }}'"
   ansible.builtin.lineinfile:
-    path: "{{ pulp_user_home }}/pulp/settings/settings.py"
+    path: "{{ pulp_service_dir }}/settings/settings.py"
     line: "{{ item }}"
     create: true
     state: present
