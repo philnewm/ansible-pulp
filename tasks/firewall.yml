@@ -6,7 +6,7 @@
   loop_control:
     loop_var: pulp_firewall_service
   ansible.posix.firewalld:
-    service: "{{ firewall_service.name }}"
+    service: "{{ pulp_firewall_service.name }}"
     state: "enabled"
     permanent: true
     immediate: true
