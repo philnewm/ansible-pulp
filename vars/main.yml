@@ -3,5 +3,10 @@
 podman_packages:
   - podman
   - systemd-container
+  - slirp4netns
+
+pulp_venv_python_packages:
+  - pulp-glue
+  - packaging
 
 ...

@@ -83,7 +83,7 @@
     device: "/dev/fuse"
     privileged: false
     tty: false
-    network: slirp4netns
+    network: "slirp4netns"
     pull: "missing"
     log_driver: "journald"
     volume: "{{ pulp_volumes_mounts }}"

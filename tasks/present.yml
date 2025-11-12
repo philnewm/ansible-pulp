@@ -41,6 +41,10 @@
   ansible.builtin.include_tasks:
     file: verify_service.yml
 
+- name: Include firewall config
+  ansible.builtin.include_tasks:
+    file: firewall.yml
+
 # TODO set up more sofisticated condition
 - name: Set admin password inside pulp container
   become: true
