@@ -8,42 +8,65 @@
     virtualenv_command: "python3 -m venv"
 
 - name: Check for selinux mode
-  when: ansible_os_family == "RedHat"
+  when: ansible_facts.os_family == "RedHat"
   ansible.builtin.command:
     cmd: getenforce
+  failed_when: false
   changed_when: false
   register: se_linux_status
 
 - name: Ensure directories for volumes exist
   become: true
-  become_user: "{{ pulp_user }}"
   loop: "{{ pulp_volumes }}"
   loop_control:
     label: "{{ item.name }}"
   ansible.builtin.file:
     path: "{{ item.host_path }}"
     state: directory
+    owner: "{{ pulp_user }}"
+    group: "{{ pulp_user }}"
     mode: "{{ item.permissions }}"
+
+# - name: Ensure directories for volumes exist
+#   become: true
+#   become_user: "{{ pulp_user }}"
+#   loop: "{{ pulp_volumes }}"
+#   loop_control:
+#     label: "{{ item.name }}"
+#   ansible.builtin.file:
+#     path: "{{ item.host_path }}"
+#     state: directory
+#     mode: "{{ item.permissions }}"
 
 - name: Ensure certs directories exist
   become: true
-  become_user: "{{ pulp_user }}"
   ansible.builtin.file:
     path: "{{ pulp_service_dir }}/settings/certs"
     state: directory
-    mode: '0755'
+    owner: "{{ pulp_user }}"
+    group: "{{ pulp_user }}"
+    mode: "0755"
+
+# - name: Ensure certs directories exist
+#   become: true
+#   become_user: "{{ pulp_user }}"
+#   ansible.builtin.file:
+#     path: "{{ pulp_service_dir }}/settings/certs"
+#     state: directory
+#     mode: '0755'
 
 - name: Ensure pulp content_origin is set
   become: true
-  become_user: "{{ pulp_user }}"
   loop:
-    - "CONTENT_ORIGIN='http://{{ ansible_hostname }}:8080'"
+    - "CONTENT_ORIGIN='http://{{ ansible_facts.hostname }}:8080'"
     - "CONTENT_PATH_PREFIX='{{ pulp_content_path_prefix }}'"
   ansible.builtin.lineinfile:
     path: "{{ pulp_service_dir }}/settings/settings.py"
     line: "{{ item }}"
     create: true
     state: present
+    owner: "{{ pulp_user }}"
+    group: "{{ pulp_user }}"
     mode: '0644'
 
 - name: Ensure .config/systemd/user directory exists
@@ -74,10 +97,10 @@
 
 - name: Create pulp container with podman
   become: true
-  become_user: "{{ pulp_user }}"
   containers.podman.podman_container:
     name: "{{ pulp_container_name }}"
     image: "{{ pulp_image }}"
+    user: "{{ pulp_user }}"
     publish: "{{ pulp_ports }}"
     detach: false  # INFO to get logs in journald
     device: "/dev/fuse"
@@ -109,10 +132,19 @@
         RestartSec=10
         TimeoutStopSec=180
 
+- name: Fix quadlet ownership
+  become: true
+  ansible.builtin.file:
+    path: "{{ pulp_user_home }}/.config/containers/systemd/{{ pulp_container_name }}.container"
+    owner: "{{ pulp_user }}"
+    group: "{{ pulp_user }}"
+
 # INFO /var/run/user/<uid>/systemd/generator/pulp.service
 - name: Enable and start generated systemd service
   become: true
   become_user: "{{ pulp_user }}"
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ pulp_uid }}"
   ansible.builtin.systemd:
     name: "{{ pulp_container_name }}.service"
     scope: user

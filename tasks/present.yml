@@ -2,7 +2,7 @@
 
 - name: Install debian specific package_facts dependency
   become: true
-  when: ansible_distribution == "Debian"
+  when: ansible_facts.distribution == "Debian"
   ansible.builtin.package:
     name: python-apt-common
     state: present
@@ -18,7 +18,7 @@
 
 - name: Set pulp user uid
   ansible.builtin.set_fact:
-    pulp_uid: "{{ getent_passwd[pulp_user][1] }}"
+    pulp_uid: "{{ ansible_facts.getent_passwd[pulp_user][1] }}"
 
 - name: Include pulp setup
   ansible.builtin.include_tasks:
