@@ -1,6 +1,6 @@
 ---
 
-name: Alma9-CI
+name: Fedora43-CI
 
 on:
   push:
@@ -22,9 +22,9 @@ permissions:
   contents: read
 
 jobs:
-  alma9-ci:
+  fedora43-ci:
     uses: philnewm/ansible-role-repo-control/.github/workflows/molecule-ci-podman.yml@main
     with:
-      scenario_name: almalinux9
+      scenario_name: fedora43
 
 ...
