@@ -3,7 +3,7 @@
 - name: Install pulp.squeezer dependencies into venv
   become: true
   ansible.builtin.pip:
-    name: "pulp-cli[pygments]"
+    name: "pulp-cli[pygments]<0.37.0"
     virtualenv: "{{ pulp_ansible_venv }}"
     virtualenv_command: "python3 -m venv"
 

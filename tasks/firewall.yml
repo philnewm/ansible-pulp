@@ -1,25 +1,31 @@
 ---
 
-- name: Modify firewall services
-  become: true
-  loop: "{{ pulp_firewall_services }}"
-  loop_control:
-    loop_var: pulp_firewall_service
-  ansible.posix.firewalld:
-    service: "{{ pulp_firewall_service.name }}"
-    state: "enabled"
-    permanent: true
-    immediate: true
+- name: Gather service facts
+  ansible.builtin.service_facts:
 
-- name: Modify firewall ports
-  become: true
-  loop: "{{ pulp_firewall_services }}"
-  loop_control:
-    loop_var: pulp_firewall_service
-  ansible.posix.firewalld:
-    port: "{{ pulp_firewall_services.port }}"
-    state: "enabled"
-    permanent: true
-    immediate: true
+- name: Firewall ports
+  when: '"firewalld" in ansible_facts.services'
+  block:
+    - name: Modify firewall services
+      become: true
+      loop: "{{ pulp_firewall_services }}"
+      loop_control:
+        loop_var: pulp_firewall_service
+      ansible.posix.firewalld:
+        service: "{{ pulp_firewall_service.name }}"
+        state: "enabled"
+        permanent: true
+        immediate: true
+
+    - name: Modify firewall ports
+      become: true
+      loop: "{{ pulp_firewall_services }}"
+      loop_control:
+        loop_var: pulp_firewall_service
+      ansible.posix.firewalld:
+        port: "{{ pulp_firewall_services.port }}"
+        state: "enabled"
+        permanent: true
+        immediate: true
 
 ...

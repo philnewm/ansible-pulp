@@ -1,12 +1,5 @@
 ---
 
-- name: Install debian specific package_facts dependency
-  become: true
-  when: ansible_distribution == "Debian"
-  ansible.builtin.package:
-    name: python-apt-common
-    state: present
-
 - name: Gather package facts
   ansible.builtin.package_facts:
 
@@ -18,7 +11,7 @@
 
 - name: Set pulp user uid
   ansible.builtin.set_fact:
-    pulp_uid: "{{ getent_passwd[pulp_user][1] }}"
+    pulp_uid: "{{ ansible_facts.getent_passwd[pulp_user][1] }}"
 
 - name: Include pulp setup
   ansible.builtin.include_tasks:
@@ -49,7 +42,9 @@
 - name: Set admin password inside pulp container
   become: true
   become_user: "{{ pulp_user }}"
-  when: pulp_status_endpoint.status != 200
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ user_result.uid }}"
+  when: quadlet_result.changed # noqa: no-handler
   containers.podman.podman_container_exec:
     name: pulp
     command: >
