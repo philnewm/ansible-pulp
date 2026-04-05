@@ -6,7 +6,6 @@ podman_packages:
   - slirp4netns
 
 pulp_venv_python_packages:
-  - pulp-glue
-  - packaging
+  - "pulp-glue<0.37.0"
 
 ...

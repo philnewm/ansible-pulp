@@ -4,15 +4,13 @@
   ansible.builtin.uri:
     url: "{{ pulp_url }}/pulp/api/v3/status/"
   register: pulp_status_endpoint_post_install
-  retries: 15
+  retries: 40
   delay: 5
   until: pulp_status_endpoint_post_install.status == 200
 
 - name: Query pulp api
-  vars:
-    ansible_python_interpreter: "{{ pulp_ansible_venv }}/bin/python"
-  become: true
-  become_user: "{{ pulp_user }}"
+  environment:
+    PYTHONPATH: "{{ pulp_ansible_venv }}/lib/python{{ ansible_facts.python.version.major }}.{{ ansible_facts.python.version.minor }}/site-packages"
   pulp.squeezer.status:
     pulp_url: "{{ pulp_url }}"
     username: "{{ pulp_admin_username }}"

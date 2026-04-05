@@ -1,0 +1,40 @@
+[Unit]
+Description=Podman container pulp.service
+Wants=network-online.target
+After=network-online.target
+RequiresMountsFor=/run/user/{{ pulp_uid }}/containers
+
+[Container]
+ContainerName={{ pulp_container_name }}
+Image={{ pulp_image }}
+Network=slirp4netns
+AddDevice=/dev/fuse
+LogDriver=journald
+
+# Pull behavior
+Pull=newer
+AutoUpdate=registry
+
+# Ports
+{% for port in pulp_ports %}
+PublishPort={{ port }}
+{% endfor %}
+
+# Volumes
+{% for volume in pulp_volumes_mounts %}
+Volume={{ volume }}
+{% endfor %}
+
+# Environment
+Environment=PULP_CONTENT_WORKERS=8
+Environment=PULP_API_WORKERS=2
+Environment=PULP_WORKERS=4
+
+[Service]
+Restart=always
+RestartSec=10
+TimeoutStartSec=240
+TimeoutStopSec=30
+
+[Install]
+WantedBy=default.target

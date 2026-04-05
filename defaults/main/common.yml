@@ -4,10 +4,11 @@ state: present
 pulp_user: "pulp"
 pulp_user_home: "/var/lib/{{ pulp_user }}"
 pulp_service_dir: "{{ pulp_user_home }}/pulp_service"
-pulp_image: "docker.io/pulp/pulp:latest"
+pulp_image: "quay.io/pulp/pulp:latest"
 pulp_container_name: "pulp"
-pulp_subid_steps: 65536
-pulp_systemd_container_prefix: "container"
+pulp_user_uid_map:  # podman run --user=root --rm quay.io/pulp/pulp bash -c "find -mount -printf \"%U=%u\n\" | sort -un" 2>/dev/null
+  pulp: 700
+  postgres: 26
 pulp_firewall_services:
   - name: http
     port: 8080/tcp
@@ -23,10 +24,14 @@ pulp_volumes:
   - name: "storage"
     host_path: "{{ pulp_service_dir }}/storage"
     container_path: "/var/lib/pulp"
+    owner: "{{ pulp_user_uid_map.pulp + (subuids.stdout.split(':')[1] | int) - 1 }}"
+    group: "{{ pulp_user_uid_map.pulp + (subgids.stdout.split(':')[1] | int) - 1 }}"
     permissions: "0755"
   - name: "pqsql"
     host_path: "{{ pulp_service_dir }}/pgsql"
     container_path: "/var/lib/pgsql"
+    owner: "{{ pulp_user_uid_map.postgres + (subuids.stdout.split(':')[1] | int) - 1 }}"
+    group: "{{ pulp_user_uid_map.postgres + (subgids.stdout.split(':')[1] | int) - 1 }}"
     permissions: "0750"
   - name: "containers"
     host_path: "{{ pulp_service_dir }}/containers"
@@ -40,7 +45,7 @@ pulp_admin_username: "admin"
 pulp_admin_password: "admin_!"
 pulp_url: "http://localhost:8080"
 pulp_content_path_prefix: "/registry/"
-pulp_ansible_venv: "{{ pulp_user_home }}/python_venv/pulp"
+pulp_ansible_venv: "/usr/local/lib/pulp_ansible_venv"
 pulp_cli: true
 pulp_cli_config_path: "{{ pulp_user_home }}/.config/pulp/cli.toml"
 pulp_validate_certs: false
