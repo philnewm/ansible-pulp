@@ -1,59 +1,44 @@
 ---
 
-- name: Gather package facts
-  ansible.builtin.package_facts:
-
-- name: "Look up entry in passwd for user {{ pulp_user }}"
+- name: Include rootless user setup
   become: true
-  ansible.builtin.getent:
-    database: passwd
-    key: "{{ pulp_user }}"
+  ansible.builtin.import_role:
+    name: philnewm.podman_rootless_user
+  vars:
+    rootless_user: "{{ pulp_user }}"
+    rootless_user_home: "/var/lib/{{ pulp_user }}"
+    system_user: true
 
-- name: Set pulp user uid
-  ansible.builtin.set_fact:
-    pulp_uid: "{{ ansible_facts.getent_passwd[pulp_user][1] }}"
-
-- name: Include pulp setup
-  ansible.builtin.include_tasks:
-    file: dependencies.yml
-
-- name: Check pulp status
-  ansible.builtin.uri:
-    url: "{{ pulp_url }}/pulp/api/v3/status/"
-  failed_when: false
-  register: pulp_status_endpoint
-  retries: 3
-  delay: 1
-  until: pulp_status_endpoint.status == 200
+- name: Ensure required podman packages are installed
+  become: true
+  ansible.builtin.package:
+    name: "{{ podman_packages }}"
+    state: present
+    update_cache: true
 
 - name: Include pulp setup
   ansible.builtin.include_tasks:
     file: service_setup.yml
 
-- name: Include service verification
-  ansible.builtin.include_tasks:
-    file: verify_service.yml
+- name: Gather service facts
+  ansible.builtin.service_facts:
 
-- name: Include firewall config
-  ansible.builtin.include_tasks:
-    file: firewall.yml
-
-# TODO set up more sofisticated condition
-- name: Set admin password inside pulp container
+- name: Open required firewall ports
   become: true
-  become_user: "{{ pulp_user }}"
-  environment:
-    XDG_RUNTIME_DIR: "/run/user/{{ user_result.uid }}"
-  when: quadlet_result.changed # noqa: no-handler
-  containers.podman.podman_container_exec:
-    name: pulp
-    command: >
-      pulpcore-manager reset-admin-password --password '{{ pulp_admin_password }}'
+  loop: "{{ pulp_firewall_ports | default([]) }}"
+  loop_control:
+    loop_var: pulp_firewall_port
+  when: "'firewalld' in ansible_facts.services"
+  ansible.posix.firewalld:
+    port: "{{ pulp_firewall_port }}"
+    state: "enabled"
+    permanent: true
+    immediate: true
 
-- name: Set up pulp-cli for manual usage
+- name: Set up pulp-cli for pulp squeezer and manual usage
   when: pulp_cli
   ansible.builtin.include_tasks:
-    file: "pulp_cli.yml"
+    file: "pulp_venv.yml"
 
 - name: Include pulp rpm config
   when: pulp_rpm_remotes is defined or pulp_rpm_repositories is defined

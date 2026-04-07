@@ -1,25 +1,5 @@
 ---
 
-- name: Install pip module dependencies
-  become: true
-  ansible.builtin.package:
-    name: python3-packaging
-    state: present
-
-- name: Install pulp.squeezer dependencies into venv
-  become: true
-  ansible.builtin.pip:
-    name: "{{ pulp_venv_python_packages }}"
-    virtualenv: "{{ pulp_ansible_venv }}"
-    virtualenv_command: "python3 -m venv"
-
-- name: Check for selinux mode
-  when: ansible_facts.os_family | lower == "redhat"
-  ansible.builtin.command:
-    cmd: getenforce
-  register: se_linux_status
-  changed_when: false
-
 - name: Read /etc/subuid
   ansible.builtin.shell:
     cmd: |
@@ -81,18 +61,36 @@
     group: "{{ pulp_user }}"
     mode: "0700"
 
-# TODO more elegant solution
-- name: Prepare volume mounts with SELinux relabel if needed
+- name: Generate list of volume mappings
   ansible.builtin.set_fact:
     pulp_volumes_mounts: >-
-      {{
-        pulp_volumes
-        | map('community.general.json_query',
-              "join(':', [host_path, container_path])")
-        | map('regex_replace', '$',
-              ':Z' if (se_linux_status.stdout | default('disabled') | lower) == 'enforcing' else '')
-        | list
-      }}
+      {{ pulp_volumes
+        | map(attribute='host_path')
+        | zip(pulp_volumes | map(attribute='container_path'))
+        | map('join', ':')
+        | list }}
+
+- name: Check for selinux mode
+  ansible.builtin.command:
+    cmd: getenforce
+  failed_when: false
+  changed_when: false
+  register: se_linux_status
+
+- name: Add :z suffix if SELinux enforcing
+  when: se_linux_status.stdout | lower == 'enforcing'
+  ansible.builtin.set_fact:
+    pulp_volumes_mounts: "{{ pulp_volumes_mounts | product([':Z']) | map('join', '') | list }}"
+
+- name: "Look up entry in passwd for user {{ pulp_user }}"
+  become: true
+  ansible.builtin.getent:
+    database: passwd
+    key: "{{ pulp_user }}"
+
+- name: Set pulp user uid
+  ansible.builtin.set_fact:
+    pulp_uid: "{{ ansible_facts.getent_passwd[pulp_user][1] }}"
 
 - name: Template pulp quadlet
   become: true
@@ -102,7 +100,6 @@
     owner: "{{ pulp_user }}"
     group: "{{ pulp_user }}"
     mode: "0640"
-  register: quadlet_result
 
 # Note /var/run/user/<uid>/systemd/generator/pulp.service
 - name: Enable and start generated systemd service
@@ -114,5 +111,23 @@
     enabled: true
     state: started
     daemon_reload: true
+  register: pulp_service_result
+
+- name: Wait for Pulp API to be ready
+  ansible.builtin.uri:
+    url: "{{ pulp_url }}/pulp/api/v3/status/"
+  register: pulp_status_endpoint_post_install
+  retries: 120
+  delay: 3
+  until: pulp_status_endpoint_post_install.status == 200
+
+- name: Set admin password inside pulp container
+  become: true
+  become_user: "{{ pulp_user }}"
+  when: pulp_service_result.changed # noqa: no-handler
+  containers.podman.podman_container_exec:
+    name: pulp
+    command: >
+      pulpcore-manager reset-admin-password --password '{{ pulp_admin_password }}'
 
 ...

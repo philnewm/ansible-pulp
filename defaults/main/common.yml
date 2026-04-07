@@ -12,8 +12,6 @@ pulp_user_uid_map:  # podman run --user=root --rm quay.io/pulp/pulp bash -c "fin
 pulp_firewall_services:
   - name: http
     port: 8080/tcp
-  - name: https
-    port: 443/tcp
 pulp_ports:
   - "8080:80"
 pulp_volumes:
