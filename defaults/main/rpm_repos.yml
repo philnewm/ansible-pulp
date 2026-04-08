@@ -1,29 +1,29 @@
 ---
 
 pulp_rpm_remotes:
-  - name: almalinux-9.6-baseos
-    url: https://repo.almalinux.org/almalinux/9.6/BaseOS/x86_64/os/
+  - name: almalinux-9-baseos
+    url: https://repo.almalinux.org/almalinux/9/BaseOS/x86_64/os/
     policy: "on_demand"
-  - name: almalinux-9.6-appstream
-    url: https://repo.almalinux.org/almalinux/9.6/AppStream/x86_64/os/
+  - name: almalinux-9-appstream
+    url: https://repo.almalinux.org/almalinux/9/AppStream/x86_64/os/
     policy: "on_demand"
 
 pulp_rpm_repositories:
-  - name: "almalinux-9.6-baseos"
-    description: Local almalinux-9.6-baseos mirror
+  - name: "almalinux-9-baseos"
+    description: Local almalinux-9-baseos mirror
     autopublish: true
-    remote: "almalinux-9.6-baseos"
+    remote: "almalinux-9-baseos"
     retain_package_versions: 3
-  - name: "almalinux-9.6-appstream"
-    description: Local almalinux-9.6-appstream mirror
+  - name: "almalinux-9-appstream"
+    description: Local almalinux-9-appstream mirror
     autopublish: true
-    remote: "almalinux-9.6-appstream"
+    remote: "almalinux-9-appstream"
     retain_package_versions: 3
 
 pulp_rpm_syncs:
-  - repository: "almalinux-9.6-baseos"
+  - repository: "almalinux-9-baseos"
     sync_policy: "additive"
-  - repository: "almalinux-9.6-appstream"
+  - repository: "almalinux-9-appstream"
     sync_policy: "additive"
 
 ...

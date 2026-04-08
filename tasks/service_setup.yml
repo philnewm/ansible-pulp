@@ -1,43 +1,49 @@
 ---
 
-- name: Install pulp.squeezer dependencies into venv
-  become: true
-  ansible.builtin.pip:
-    name: "{{ pulp_venv_python_packages }}"
-    virtualenv: "{{ pulp_ansible_venv }}"
-    virtualenv_command: "python3 -m venv"
-
-- name: Check for selinux mode
-  when: ansible_os_family == "RedHat"
-  ansible.builtin.command:
-    cmd: getenforce
+- name: Read /etc/subuid
+  ansible.builtin.shell:
+    cmd: |
+      set -o pipefail
+      cat /etc/subuid | grep {{ pulp_user }}
+    executable: /bin/bash
+  register: subuids
   changed_when: false
-  register: se_linux_status
+
+- name: Read /etc/subgid
+  ansible.builtin.shell:
+    cmd: |
+      set -o pipefail
+      cat /etc/subgid | grep {{ pulp_user }}
+    executable: /bin/bash
+  register: subgids
+  changed_when: false
 
 - name: Ensure directories for volumes exist
   become: true
-  become_user: "{{ pulp_user }}"
   loop: "{{ pulp_volumes }}"
   loop_control:
     label: "{{ item.name }}"
   ansible.builtin.file:
     path: "{{ item.host_path }}"
     state: directory
+    owner: "{{ item.owner | default(pulp_user) }}"
+    group: "{{ item.group | default(pulp_user) }}"
     mode: "{{ item.permissions }}"
 
 - name: Ensure certs directories exist
   become: true
-  become_user: "{{ pulp_user }}"
   ansible.builtin.file:
     path: "{{ pulp_service_dir }}/settings/certs"
     state: directory
+    owner: "{{ pulp_user }}"
+    group: "{{ pulp_user }}"
     mode: '0755'
 
 - name: Ensure pulp content_origin is set
   become: true
   become_user: "{{ pulp_user }}"
   loop:
-    - "CONTENT_ORIGIN='http://{{ ansible_hostname }}:8080'"
+    - "CONTENT_ORIGIN='http://{{ ansible_facts.hostname }}:8080'"
     - "CONTENT_PATH_PREFIX='{{ pulp_content_path_prefix }}'"
   ansible.builtin.lineinfile:
     path: "{{ pulp_service_dir }}/settings/settings.py"
@@ -55,61 +61,47 @@
     group: "{{ pulp_user }}"
     mode: "0700"
 
-# TODO more elegant solution
-- name: Prepare volume mounts with SELinux relabel if needed
+- name: Generate list of volume mappings
   ansible.builtin.set_fact:
     pulp_volumes_mounts: >-
-      {{
-        pulp_volumes
-        | map('community.general.json_query',
-              "join(':', [host_path, container_path])")
-        | map('regex_replace', '$',
-              ':Z' if (se_linux_status.stdout | default('disabled') | lower) == 'enforcing' else '')
-        | list
-      }}
+      {{ pulp_volumes
+        | map(attribute='host_path')
+        | zip(pulp_volumes | map(attribute='container_path'))
+        | map('join', ':')
+        | list }}
 
-# - name: Show combined volumes
-#   ansible.builtin.debug:
-#     msg: "{{ pulp_volumes_mounts }}"
+- name: Check for selinux mode
+  ansible.builtin.command:
+    cmd: getenforce
+  failed_when: false
+  changed_when: false
+  register: se_linux_status
 
-- name: Create pulp container with podman
+- name: Add :z suffix if SELinux enforcing
+  when: se_linux_status.stdout | lower == 'enforcing'
+  ansible.builtin.set_fact:
+    pulp_volumes_mounts: "{{ pulp_volumes_mounts | product([':Z']) | map('join', '') | list }}"
+
+- name: "Look up entry in passwd for user {{ pulp_user }}"
   become: true
-  become_user: "{{ pulp_user }}"
-  containers.podman.podman_container:
-    name: "{{ pulp_container_name }}"
-    image: "{{ pulp_image }}"
-    publish: "{{ pulp_ports }}"
-    detach: false  # INFO to get logs in journald
-    device: "/dev/fuse"
-    privileged: false
-    tty: false
-    network: "slirp4netns"
-    pull: "missing"
-    log_driver: "journald"
-    volume: "{{ pulp_volumes_mounts }}"
-    state: "quadlet"
-    quadlet_dir: "{{ pulp_user_home }}/.config/containers/systemd"
-    quadlet_file_mode: "0640"
-    quadlet_filename: "{{ pulp_container_name }}.container"
-    quadlet_options:
-      - "AutoUpdate=registry"
-      - "Pull=newer"
-      - |
-        [Install]
-        WantedBy=default.target
-      - |
-        [Unit]
-        Description=Podman container pulp.service
-        Wants=network-online.target
-        After=network-online.target
-        RequiresMountsFor=/run/user/{{ pulp_uid }}/containers
-      - |
-        [Service]
-        Restart=always
-        RestartSec=10
-        TimeoutStopSec=180
+  ansible.builtin.getent:
+    database: passwd
+    key: "{{ pulp_user }}"
 
-# INFO /var/run/user/<uid>/systemd/generator/pulp.service
+- name: Set pulp user uid
+  ansible.builtin.set_fact:
+    pulp_uid: "{{ ansible_facts.getent_passwd[pulp_user][1] }}"
+
+- name: Template pulp quadlet
+  become: true
+  ansible.builtin.template:
+    src: pulp.container.j2
+    dest: "{{ pulp_user_home }}/.config/containers/systemd/pulp.container"
+    owner: "{{ pulp_user }}"
+    group: "{{ pulp_user }}"
+    mode: "0640"
+
+# Note /var/run/user/<uid>/systemd/generator/pulp.service
 - name: Enable and start generated systemd service
   become: true
   become_user: "{{ pulp_user }}"
@@ -119,5 +111,23 @@
     enabled: true
     state: started
     daemon_reload: true
+  register: pulp_service_result
+
+- name: Wait for Pulp API to be ready
+  ansible.builtin.uri:
+    url: "{{ pulp_url }}/pulp/api/v3/status/"
+  register: pulp_status_endpoint_post_install
+  retries: 120
+  delay: 3
+  until: pulp_status_endpoint_post_install.status == 200
+
+- name: Set admin password inside pulp container
+  become: true
+  become_user: "{{ pulp_user }}"
+  when: pulp_service_result.changed # noqa: no-handler
+  containers.podman.podman_container_exec:
+    name: pulp
+    command: >
+      pulpcore-manager reset-admin-password --password '{{ pulp_admin_password }}'
 
 ...

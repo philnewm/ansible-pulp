@@ -1,10 +1,8 @@
 ---
 
 - name: Create rpm remotes
-  vars:
-    ansible_python_interpreter: "{{ pulp_ansible_venv }}/bin/python"
-  become: true
-  become_user: "{{ pulp_user }}"
+  environment:
+    PYTHONPATH: "{{ pulp_ansible_venv }}/lib/python{{ ansible_facts.python.version.major }}.{{ ansible_facts.python.version.minor }}/site-packages"
   loop: "{{ pulp_rpm_remotes }}"
   loop_control:
     loop_var: rpm_remote
@@ -19,10 +17,8 @@
     state: present
 
 - name: Create rpm repositories
-  vars:
-    ansible_python_interpreter: "{{ pulp_ansible_venv }}/bin/python"
-  become: true
-  become_user: "{{ pulp_user }}"
+  environment:
+    PYTHONPATH: "{{ pulp_ansible_venv }}/lib/python{{ ansible_facts.python.version.major }}.{{ ansible_facts.python.version.minor }}/site-packages"
   loop: "{{ pulp_rpm_repositories }}"
   loop_control:
     loop_var: rpm_repository
@@ -39,10 +35,8 @@
     state: present
 
 - name: Run rpm syncs
-  vars:
-    ansible_python_interpreter: "{{ pulp_ansible_venv }}/bin/python"
-  become: true
-  become_user: "{{ pulp_user }}"
+  environment:
+    PYTHONPATH: "{{ pulp_ansible_venv }}/lib/python{{ ansible_facts.python.version.major }}.{{ ansible_facts.python.version.minor }}/site-packages"
   loop: "{{ pulp_rpm_syncs }}"
   loop_control:
     loop_var: rpm_sync
@@ -56,10 +50,8 @@
   register: rpm_sync_result
 
 - name: Get the latest publication for repo
-  vars:
-    ansible_python_interpreter: "{{ pulp_ansible_venv }}/bin/python"
-  become: true
-  become_user: "{{ pulp_user }}"
+  environment:
+    PYTHONPATH: "{{ pulp_ansible_venv }}/lib/python{{ ansible_facts.python.version.major }}.{{ ansible_facts.python.version.minor }}/site-packages"
   loop: "{{ pulp_rpm_repositories }}"
   loop_control:
     loop_var: rpm_repository
@@ -72,10 +64,8 @@
   register: publication_info
 
 - name: Distribute rpm publications
-  vars:
-    ansible_python_interpreter: "{{ pulp_ansible_venv }}/bin/python"
-  become: true
-  become_user: "{{ pulp_user }}"
+  environment:
+    PYTHONPATH: "{{ pulp_ansible_venv }}/lib/python{{ ansible_facts.python.version.major }}.{{ ansible_facts.python.version.minor }}/site-packages"
   loop: "{{ publication_info.results }}"
   loop_control:
     loop_var: publication

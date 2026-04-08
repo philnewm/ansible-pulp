@@ -5,8 +5,15 @@ podman_packages:
   - systemd-container
   - slirp4netns
 
+pulp_venv_system_packages:
+  redhat:
+    - python3-packaging
+  debian:
+    - python3-venv
+    - python3-packaging
+
 pulp_venv_python_packages:
-  - pulp-glue
-  - packaging
+  - "pulp-glue<0.37.0"  # version >0.37.0 cause issues with squeezer module
+  - "pulp-cli[pygments]<0.37.0"  # has pulp-glue as dependency
 
 ...
