@@ -9,10 +9,10 @@ pulp_container_name: "pulp"
 pulp_user_uid_map:  # podman run --user=root --rm quay.io/pulp/pulp bash -c "find -mount -printf \"%U=%u\n\" | sort -un" 2>/dev/null
   pulp: 700
   postgres: 26
-pulp_firewall_services:
+pulp_firewall_rules:
   - name: http
     port: 8080/tcp
-pulp_ports:
+pulp_container_ports:
   - "8080:80"
 pulp_volumes:
   - name: "settings"

@@ -25,12 +25,12 @@
 
 - name: Open required firewall ports
   become: true
-  loop: "{{ pulp_firewall_ports | default([]) }}"
+  loop: "{{ pulp_firewall_rules | default([]) }}"
   loop_control:
-    loop_var: pulp_firewall_port
-  when: "'firewalld' in ansible_facts.services"
+    loop_var: pulp_firewall_rule
+  when: "'firewalld.service' in ansible_facts.services"
   ansible.posix.firewalld:
-    port: "{{ pulp_firewall_port }}"
+    port: "{{ pulp_firewall_rule.port }}"
     state: "enabled"
     permanent: true
     immediate: true

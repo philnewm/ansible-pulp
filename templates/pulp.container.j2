@@ -16,7 +16,7 @@ Pull=newer
 AutoUpdate=registry
 
 # Ports
-{% for port in pulp_ports %}
+{% for port in pulp_container_ports %}
 PublishPort={{ port }}
 {% endfor %}
 
