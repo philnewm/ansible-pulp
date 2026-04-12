@@ -24,6 +24,7 @@
   ansible.builtin.service_facts:
 
 - name: Configure firewall
+  when: "'firewalld.service' in ansible_facts.services"
   block:
     - name: Install firewalld python bindings
       become: true
@@ -36,7 +37,6 @@
       loop: "{{ pulp_firewall_rules | default([]) }}"
       loop_control:
         loop_var: pulp_firewall_rule
-      when: "'firewalld.service' in ansible_facts.services"
       ansible.posix.firewalld:
         port: "{{ pulp_firewall_rule.port }}"
         state: "enabled"
