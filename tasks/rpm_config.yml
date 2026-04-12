@@ -75,7 +75,7 @@
     username: "{{ pulp_admin_username }}"
     password: "{{ pulp_admin_password }}"
     name: "{{ publication.rpm_repository.name }}-pub"
-    base_path: "{{ publication.rpm_repository.name }}"
+    base_path: "{{ publication.rpm_repository.base_path | default(publication.rpm_repository.name) }}"
     publication: "{{ publication.publication.pulp_href }}"
     generate_repo_config: true
     state: present
