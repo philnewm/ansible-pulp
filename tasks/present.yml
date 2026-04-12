@@ -24,7 +24,7 @@
   ansible.builtin.service_facts:
 
 - name: Configure firewall
-  when: "'firewalld.service' in ansible_facts.services"
+  when: "'firewalld.service' in ansible_facts.services and ansible_facts.services['firewalld.service'].state == 'active'"
   block:
     - name: Install firewalld python bindings
       become: true
