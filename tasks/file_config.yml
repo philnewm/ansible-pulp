@@ -52,7 +52,7 @@
     state: present
   register: file_publication
 
-- name: Distribute file publications
+- name: Distribute file distributions
   vars:
     ansible_python_interpreter: "{{ pulp_ansible_venv }}/bin/python"
   become: true
