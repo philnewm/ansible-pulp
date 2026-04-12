@@ -23,17 +23,25 @@
 - name: Gather service facts
   ansible.builtin.service_facts:
 
-- name: Open required firewall ports
-  become: true
-  loop: "{{ pulp_firewall_rules | default([]) }}"
-  loop_control:
-    loop_var: pulp_firewall_rule
-  when: "'firewalld.service' in ansible_facts.services"
-  ansible.posix.firewalld:
-    port: "{{ pulp_firewall_rule.port }}"
-    state: "enabled"
-    permanent: true
-    immediate: true
+- name: Configure firewall
+  block:
+    - name: Install firewalld python bindings
+      become: true
+      ansible.builtin.package:
+        name: "python3-firewall"
+        state: present
+
+    - name: Open required firewall ports
+      become: true
+      loop: "{{ pulp_firewall_rules | default([]) }}"
+      loop_control:
+        loop_var: pulp_firewall_rule
+      when: "'firewalld.service' in ansible_facts.services"
+      ansible.posix.firewalld:
+        port: "{{ pulp_firewall_rule.port }}"
+        state: "enabled"
+        permanent: true
+        immediate: true
 
 - name: Set up pulp-cli for pulp squeezer and manual usage
   when: pulp_cli
