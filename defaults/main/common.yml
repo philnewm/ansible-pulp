@@ -43,6 +43,9 @@ pulp_admin_username: "admin"
 pulp_admin_password: "admin_!"
 pulp_url: "http://localhost:8080"
 pulp_content_path_prefix: "/registry/"
+pulp_content_workers: 8
+pulp_api_workers: 2
+pulp_workers: 4
 pulp_ansible_venv: "/usr/local/lib/pulp_ansible_venv"
 pulp_cli: true
 pulp_cli_config_path: "{{ pulp_user_home }}/.config/pulp/cli.toml"

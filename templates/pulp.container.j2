@@ -26,9 +26,9 @@ Volume={{ volume }}
 {% endfor %}
 
 # Environment
-Environment=PULP_CONTENT_WORKERS=8
-Environment=PULP_API_WORKERS=2
-Environment=PULP_WORKERS=4
+Environment=PULP_CONTENT_WORKERS={{ pulp_content_workers }}
+Environment=PULP_API_WORKERS={{ pulp_api_workers }}
+Environment=PULP_WORKERS={{ pulp_workers }}
 
 [Service]
 Restart=always
