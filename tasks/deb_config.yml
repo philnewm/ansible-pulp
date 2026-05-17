@@ -1,0 +1,61 @@
+---
+
+- name: Create deb remotes
+  environment:
+    PYTHONPATH: "{{ pulp_ansible_venv }}/lib/python{{ ansible_facts.python.version.major }}.{{ ansible_facts.python.version.minor }}/site-packages"
+  loop: "{{ pulp_deb_remotes }}"
+  loop_control:
+    loop_var: deb_remote
+    label: "{{ deb_remote.name }}"
+  pulp.squeezer.deb_remote:
+    pulp_url: "{{ pulp_url }}"
+    username: "{{ pulp_admin_username }}"
+    password: "{{ pulp_admin_password }}"
+    name: "{{ deb_remote.name }}"
+    url: "{{ deb_remote.url }}"
+    architectures: "{{ deb_remote.architectures }}"
+    distributions: "{{ deb_remote.distributions }}"
+    components: "{{ deb_remote.components }}"
+    policy: "{{ deb_remote.policy }}"
+    sync_sources: "{{ deb_remote.sync_sources }}"
+    sync_installer: "{{ deb_remote.sync_installer }}"
+    sync_udebs: "{{ deb_remote.sync_udebs }}"
+    state: present
+
+- name: Create deb repositories
+  environment:
+    PYTHONPATH: "{{ pulp_ansible_venv }}/lib/python{{ ansible_facts.python.version.major }}.{{ ansible_facts.python.version.minor }}/site-packages"
+  loop: "{{ pulp_deb_repositories }}"
+  loop_control:
+    loop_var: deb_repository
+    label: "{{ deb_repository.name }}"
+  pulp.squeezer.deb_repository:
+    pulp_url: "{{ pulp_url }}"
+    username: "{{ pulp_admin_username }}"
+    password: "{{ pulp_admin_password }}"
+    name: "{{ deb_repository.name }}"
+    description: "{{ deb_repository.description }}"
+    remote: "{{ deb_repository.remote }}"
+    state: present
+  register: deb_repo
+
+# TODO remove when pulp_labels parameter is supported in deb_repository
+- name: Set labels on deb repository
+  environment:
+    PYTHONPATH: "{{ pulp_ansible_venv }}/lib/python{{ ansible_facts.python.version.major }}.{{ ansible_facts.python.version.minor }}/site-packages"
+  loop: "{{ deb_repo.results }}"
+  loop_control:
+    loop_var: "deb_repo_data"
+    label: "{{ deb_repo_data.repository.name }}"
+  when: deb_repo_data.deb_repository.pulp_labels is defined and deb_repo_data.changed
+  pulp.squeezer.api_call:
+    pulp_url: "{{ pulp_url }}"
+    username: "{{ pulp_admin_username }}"
+    password: "{{ pulp_admin_password }}"
+    operation_id: repositories_deb_apt_partial_update
+    parameters:
+      deb_apt_repository_href: "{{ deb_repo_data.repository.pulp_href }}"
+    body:
+      pulp_labels: "{{ deb_repo_data.deb_repository.pulp_labels }}"
+
+...

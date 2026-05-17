@@ -30,54 +30,30 @@
     name: "{{ rpm_repository.name }}"
     description: "{{ rpm_repository.description }}"
     autopublish: "{{ rpm_repository.autopublish }}"
+    repo_config: "{{ rpm_repository.repo_config | default(omit) }}"
     remote: "{{ rpm_repository.remote }}"
     retain_package_versions: "{{ rpm_repository.retain_package_versions }}"
+    #  pulp_labels: "{{ rpm_repository.pulp_labels | default(omit) }}"
     state: present
+  register: rpm_repo
 
-- name: Run rpm syncs
+# TODO remove when pulp_labels parameter is supported in rpm_repository
+- name: Set labels for rpm repositories
   environment:
     PYTHONPATH: "{{ pulp_ansible_venv }}/lib/python{{ ansible_facts.python.version.major }}.{{ ansible_facts.python.version.minor }}/site-packages"
-  loop: "{{ pulp_rpm_syncs }}"
+  loop: "{{ rpm_repo.results }}"
   loop_control:
-    loop_var: rpm_sync
-    label: "{{ rpm_sync.repository }}"
-  pulp.squeezer.rpm_sync:
+    loop_var: "rpm_repo_data"
+    label: "{{ rpm_repo_data.repository.name }}"
+  when: rpm_repo_data.rpm_repository.pulp_labels is defined and rpm_repo_data.changed
+  pulp.squeezer.api_call:
     pulp_url: "{{ pulp_url }}"
     username: "{{ pulp_admin_username }}"
     password: "{{ pulp_admin_password }}"
-    repository: "{{ rpm_sync.repository }}"
-    sync_policy: "{{ rpm_sync.sync_policy }}"
-  register: rpm_sync_result
-
-- name: Get the latest publication for repo
-  environment:
-    PYTHONPATH: "{{ pulp_ansible_venv }}/lib/python{{ ansible_facts.python.version.major }}.{{ ansible_facts.python.version.minor }}/site-packages"
-  loop: "{{ pulp_rpm_repositories }}"
-  loop_control:
-    loop_var: rpm_repository
-    label: "{{ rpm_repository.name }}"
-  pulp.squeezer.rpm_publication:
-    pulp_url: "{{ pulp_url }}"
-    username: "{{ pulp_admin_username }}"
-    password: "{{ pulp_admin_password }}"
-    repository: "{{ rpm_repository.name }}"
-  register: publication_info
-
-- name: Distribute rpm publications
-  environment:
-    PYTHONPATH: "{{ pulp_ansible_venv }}/lib/python{{ ansible_facts.python.version.major }}.{{ ansible_facts.python.version.minor }}/site-packages"
-  loop: "{{ publication_info.results }}"
-  loop_control:
-    loop_var: publication
-    label: "{{ publication.rpm_repository.name }}"
-  pulp.squeezer.rpm_distribution:
-    pulp_url: "{{ pulp_url }}"
-    username: "{{ pulp_admin_username }}"
-    password: "{{ pulp_admin_password }}"
-    name: "{{ publication.rpm_repository.name }}-pub"
-    base_path: "{{ publication.rpm_repository.base_path | default(publication.rpm_repository.name) }}"
-    publication: "{{ publication.publication.pulp_href }}"
-    generate_repo_config: true
-    state: present
+    operation_id: repositories_rpm_rpm_partial_update
+    parameters:
+      rpm_rpm_repository_href: "{{ rpm_repo_data.repository.pulp_href }}"
+    body:
+      pulp_labels: "{{ rpm_repo_data.rpm_repository.pulp_labels }}"
 
 ...
