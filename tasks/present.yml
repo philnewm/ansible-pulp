@@ -53,12 +53,17 @@
   ansible.builtin.include_tasks:
     file: rpm_config.yml
 
+- name: Include pulp deb config
+  when: pulp_deb_remotes is defined or pulp_deb_repositories is defined
+  ansible.builtin.include_tasks:
+    file: deb_config.yml
+
 - name: Include pulp python config
   when: pulp_python_remotes is defined or pulp_python_repositories is defined
   ansible.builtin.include_tasks:
     file: python_config.yml
 
-- name: Include pulp python config
+- name: Include pulp file config
   when: pulp_file_repositories is defined or pulp_file_content is defined
   ansible.builtin.include_tasks:
     file: file_config.yml

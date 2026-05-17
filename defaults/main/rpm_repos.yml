@@ -14,18 +14,14 @@ pulp_rpm_repositories:
     autopublish: true
     remote: "almalinux-9-baseos"
     retain_package_versions: 3
-    base_path: "almalinux/9/BaseOS/x86_64/os"
+    pulp_labels:
+      default_base_path: "almalinux/9/BaseOS/x86_64/os"
   - name: "almalinux-9-appstream"
     description: Local almalinux-9-appstream mirror
     autopublish: true
     remote: "almalinux-9-appstream"
     retain_package_versions: 3
-    base_path: "almalinux/9/AppStream/x86_64/os"
-
-pulp_rpm_syncs:
-  - repository: "almalinux-9-baseos"
-    sync_policy: "additive"
-  - repository: "almalinux-9-appstream"
-    sync_policy: "additive"
+    pulp_labels:
+      default_base_path: "almalinux/9/AppStream/x86_64/os"
 
 ...
