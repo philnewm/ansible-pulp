@@ -1,0 +1,52 @@
+---
+
+pulp_deb_remotes:
+  - name: debian-trixie
+    url: http://deb.debian.org/debian
+    architectures: amd64
+    distributions: "trixie"
+    components: "main contrib non-free non-free-firmware"
+    policy: "immediate"
+    sync_sources: false
+    sync_installer: true
+    sync_udebs: true
+  - name: debian-trixie-security
+    url: http://security.debian.org/debian-security
+    architectures: amd64
+    distributions: "trixie-security"
+    components: "main contrib non-free non-free-firmware"
+    policy: "on_demand"
+    sync_sources: false
+    sync_installer: false
+    sync_udebs: false
+  - name: debian-trixie-updates
+    url: http://deb.debian.org/debian
+    architectures: amd64
+    distributions: "trixie-updates"
+    components: "main contrib non-free non-free-firmware"
+    policy: "on_demand"
+    sync_sources: false
+    sync_installer: false
+    sync_udebs: false
+
+pulp_deb_repositories:
+  - name: "debian-trixie"
+    description: Local debian-trixie mirror
+    remote: "debian-trixie"
+    pulp_labels:
+      default_base_path: "debian"
+      default_publication_mode: "verbatim"
+  - name: "debian-trixie-security"
+    description: Local debian-trixie-security mirror
+    remote: "debian-trixie-security"
+    pulp_labels:
+      default_base_path: "debian-security"
+      default_publication_mode: "structured"
+  - name: "debian-trixie-updates"
+    description: Local debian-trixie-updates mirror
+    remote: "debian-trixie-updates"
+    pulp_labels:
+      default_base_path: "debian"
+      default_publication_mode: "structured"
+
+...

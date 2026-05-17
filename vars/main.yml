@@ -12,8 +12,10 @@ pulp_venv_system_packages:
     - python3-venv
     - python3-packaging
 
+# check: ansible_collections/pulp/squeezer/plugins/module_utils/pulp_glue.py
 pulp_venv_python_packages:
   - "pulp-glue<0.37.0"  # version >0.37.0 cause issues with squeezer module
   - "pulp-cli[pygments]<0.37.0"  # has pulp-glue as dependency
+  - "pulp-cli-deb>=0.3.0,<0.4"  # squeezer 0.2.3 requires <0.4"
 
 ...
