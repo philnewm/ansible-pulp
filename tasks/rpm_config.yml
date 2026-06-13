@@ -33,27 +33,7 @@
     repo_config: "{{ rpm_repository.repo_config | default(omit) }}"
     remote: "{{ rpm_repository.remote }}"
     retain_package_versions: "{{ rpm_repository.retain_package_versions }}"
-    #  pulp_labels: "{{ rpm_repository.pulp_labels | default(omit) }}"
+    pulp_labels: "{{ rpm_repository.pulp_labels | default(omit) }}"
     state: present
-  register: rpm_repo
-
-# TODO remove when pulp_labels parameter is supported in rpm_repository
-- name: Set labels for rpm repositories
-  environment:
-    PYTHONPATH: "{{ pulp_ansible_venv }}/lib/python{{ ansible_facts.python.version.major }}.{{ ansible_facts.python.version.minor }}/site-packages"
-  loop: "{{ rpm_repo.results }}"
-  loop_control:
-    loop_var: "rpm_repo_data"
-    label: "{{ rpm_repo_data.repository.name }}"
-  when: rpm_repo_data.rpm_repository.pulp_labels is defined and rpm_repo_data.changed
-  pulp.squeezer.api_call:
-    pulp_url: "{{ pulp_url }}"
-    username: "{{ pulp_admin_username }}"
-    password: "{{ pulp_admin_password }}"
-    operation_id: repositories_rpm_rpm_partial_update
-    parameters:
-      rpm_rpm_repository_href: "{{ rpm_repo_data.repository.pulp_href }}"
-    body:
-      pulp_labels: "{{ rpm_repo_data.rpm_repository.pulp_labels }}"
 
 ...

@@ -13,27 +13,8 @@
     password: "{{ pulp_admin_password }}"
     name: "{{ file_repository.name }}"
     description: "{{ file_repository.description }}"
+    pulp_labels: "{{ file_repository.pulp_labels | default(omit) }}"
     state: present
-  register: file_repo
-
-# TODO remove when pulp_labels parameter is supported in file_repository
-- name: Set labels for file repositories
-  environment:
-    PYTHONPATH: "{{ pulp_ansible_venv }}/lib/python{{ ansible_facts.python.version.major }}.{{ ansible_facts.python.version.minor }}/site-packages"
-  loop: "{{ file_repo.results }}"
-  loop_control:
-    loop_var: "file_repo_data"
-    label: "{{ file_repo_data.repository.name }}"
-  when: file_repo_data.file_repository.pulp_labels is defined and file_repo_data.changed
-  pulp.squeezer.api_call:
-    pulp_url: "{{ pulp_url }}"
-    username: "{{ pulp_admin_username }}"
-    password: "{{ pulp_admin_password }}"
-    operation_id: repositories_file_file_partial_update
-    parameters:
-      file_file_repository_href: "{{ file_repo_data.repository.pulp_href }}"
-    body:
-      pulp_labels: "{{ file_repo_data.file_repository.pulp_labels }}"
 
 - name: Upload content units
   vars:

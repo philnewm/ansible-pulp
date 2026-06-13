@@ -39,15 +39,17 @@
     group: "{{ pulp_user }}"
     mode: '0755'
 
-- name: Ensure pulp content_origin is set
+- name: Ensure pulp settings are configured
   become: true
   become_user: "{{ pulp_user }}"
-  loop:
-    - "CONTENT_ORIGIN='http://{{ ansible_facts.hostname }}:8080'"
-    - "CONTENT_PATH_PREFIX='{{ pulp_content_path_prefix }}'"
+  loop: "{{ pulp_settings | dict2items }}"
+  loop_control:
+    loop_var: "pulp_setting"
+    label: "{{ pulp_setting.key }}"
   ansible.builtin.lineinfile:
     path: "{{ pulp_service_dir }}/settings/settings.py"
-    line: "{{ item }}"
+    regexp: "^{{ pulp_setting.key }}="
+    line: "{{ pulp_setting.key }}={{ pulp_setting.value | to_json }}"
     create: true
     state: present
     mode: '0644'

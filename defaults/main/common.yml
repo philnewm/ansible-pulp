@@ -4,7 +4,7 @@ state: present
 pulp_user: "pulp"
 pulp_user_home: "/var/lib/{{ pulp_user }}"
 pulp_service_dir: "{{ pulp_user_home }}/pulp_service"
-pulp_image: "quay.io/pulp/pulp:latest"
+pulp_image: "quay.io/pulp/pulp:stable"
 pulp_container_name: "pulp"
 pulp_user_uid_map:  # podman run --user=root --rm quay.io/pulp/pulp bash -c "find -mount -printf \"%U=%u\n\" | sort -un" 2>/dev/null
   pulp: 700
@@ -39,6 +39,16 @@ pulp_volumes:
     host_path: "{{ pulp_service_dir }}/container_build"
     container_path: "/var/lib/pulp/.local/share/containers"
     permissions: "0755"
+pulp_settings:
+  CONTENT_ORIGIN: "http://{{ ansible_facts.hostname }}:8080"
+  CONTENT_PATH_PREFIX: "{{ pulp_content_path_prefix }}"
+  ALLOWED_CONTENT_CHECKSUMS:
+    - md5  # required for debian 13
+    - sha1
+    - sha224
+    - sha256
+    - sha384
+    - sha512
 pulp_admin_username: "admin"
 pulp_admin_password: "admin_!"
 pulp_url: "http://localhost:8080"
