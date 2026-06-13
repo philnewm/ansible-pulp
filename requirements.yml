@@ -1,7 +1,8 @@
 collections:
-  - community.general
-  - containers.podman
-  - pulp.squeezer
+  - name: community.general
+  - name: containers.podman
+  - name: pulp.squeezer
+    version: 0.4.0
 
 roles:
   - name: philnewm.podman_rootless_user

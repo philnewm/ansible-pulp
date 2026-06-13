@@ -1,1 +1,3 @@
 jmespath
+pulp-cli
+pulp-cli-deb
