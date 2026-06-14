@@ -65,7 +65,7 @@
     username: "{{ pulp_admin_username }}"
     password: "{{ pulp_admin_password }}"
     name: "{{ publication.file_repository.name }}-pub"
-    base_path: "{{ publication.file_repository.name }}"
+    base_path: "{{ publication.file_repository.pulp_labels.default_base_path | default(publication.file_repository.name) }}"
     publication: "{{ publication.publication.pulp_href }}"
     state: present
 
