@@ -3,7 +3,7 @@
 podman_packages:
   - podman
   - systemd-container
-  - slirp4netns
+  - passt
 
 pulp_venv_system_packages:
   redhat:
@@ -15,6 +15,6 @@ pulp_venv_system_packages:
 # check: ansible_collections/pulp/squeezer/plugins/module_utils/pulp_glue.py
 pulp_venv_python_packages:
   - "pulp-cli[pygments]>=0.29.2,<0.40"  # includes pulp-glue
-  - "pulp-cli-deb>=0.3.0,<0.5" 
+  - "pulp-cli-deb>=0.3.0,<0.5"
 
 ...
