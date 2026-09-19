@@ -72,18 +72,6 @@
         | map('join', ':')
         | list }}
 
-- name: Check for selinux mode
-  ansible.builtin.command:
-    cmd: getenforce
-  failed_when: false
-  changed_when: false
-  register: se_linux_status
-
-- name: Add :z suffix if SELinux enforcing
-  when: se_linux_status.stdout | lower == 'enforcing'
-  ansible.builtin.set_fact:
-    pulp_volumes_mounts: "{{ pulp_volumes_mounts | product([':Z']) | map('join', '') | list }}"
-
 - name: "Look up entry in passwd for user {{ pulp_user }}"
   become: true
   ansible.builtin.getent:
@@ -110,7 +98,6 @@
   ansible.builtin.systemd:
     name: "{{ pulp_container_name }}.service"
     scope: user
-    enabled: true
     state: started
     daemon_reload: true
   register: pulp_service_result

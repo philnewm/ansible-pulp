@@ -7,7 +7,7 @@ RequiresMountsFor=/run/user/{{ pulp_uid }}/containers
 [Container]
 ContainerName={{ pulp_container_name }}
 Image={{ pulp_image }}
-Network=slirp4netns
+Network=pasta
 AddDevice=/dev/fuse
 LogDriver=journald
 
@@ -21,8 +21,9 @@ PublishPort={{ port }}
 {% endfor %}
 
 # Volumes
-{% for volume in pulp_volumes_mounts %}
-Volume={{ volume }}
+{% for volume in pulp_volumes %}
+{% set options = volume.options | default([]) + (['Z'] if ansible_facts.selinux.status | default('disabled') == 'enabled' else []) +%}
+Volume={{ volume.host_path }}:{{ volume.container_path }}{% if options %}:{{ options | join(',') }}{% endif %}
 {% endfor %}
 
 # Environment
